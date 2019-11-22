@@ -27,9 +27,15 @@ proc queryHtml(query: string, start = 0): string =
   })
   result = client.getContent(url)
 
-iterator search*(query: string, num_results = 10): SearchResult =
+iterator search*(query: string, maxResults = 10): SearchResult =
+  ## Iterator over each result that search the given `query` string
+  ## using Google. Return `maxResults` items at most.
+  runnableExamples:
+    for result in search("nim", 2):
+      echo result.url & " " & result.title & " " & result.snippet
+
   var total = 0
-  while total < num_results:
+  while total < maxResults:
     let html = queryHtml(query, total)
     let xml = parseHtml(newStringStream(html))
 
@@ -51,7 +57,7 @@ iterator search*(query: string, num_results = 10): SearchResult =
       yield sr
 
       total += 1
-      if total >= num_results:
+      if total >= maxResults:
         break
 
 when isMainModule:
