@@ -25,7 +25,6 @@ proc search*(query: string, num_results: int = 10): seq[SearchResult] =
   while true:
     let q = encodeQuery({"q": query, "start": $start})
     let url = SEARCH_URL & "?" & q
-    echo url
     client.headers = newHttpHeaders({
       "User-Agent": USER_AGENT,
       "Accept-Language": "en-US,en;q=0.5",
