@@ -1,4 +1,5 @@
 import httpclient
+import sequtils
 import uri
 import xmltree
 from htmlparser import parseHtml
@@ -19,9 +20,9 @@ const
 proc `$`*(self: SearchResult): string =
   self.url & "\n  TITLE: " & self.title & "\n  SNIPPET: " & self.snippet
 
-proc search*(query: string, num_results: int = 10): seq[SearchResult] =
+proc search*(query: string, num_results = 10): seq[SearchResult] =
   var client = newHttpClient()
-  var start: int = 0
+  var start = 0
   while true:
     let q = encodeQuery({"q": query, "start": $start})
     let url = SEARCH_URL & "?" & q
@@ -31,12 +32,13 @@ proc search*(query: string, num_results: int = 10): seq[SearchResult] =
     })
     let html = client.getContent(url)
     let xml = parseHtml(newStringStream(html))
-    let links = xml.querySelectorAll("div.r")
 
+    let links = xml.querySelectorAll("div.r")
     if len(links) == 0:
       break
+    let snippets = xml.querySelectorAll("span.st")
 
-    for link in links:
+    for (link, snip) in zip(links, snippets):
       var sr: SearchResult
       for a in link.querySelectorAll("a"):
         sr.url = a.attr("href")
@@ -44,13 +46,8 @@ proc search*(query: string, num_results: int = 10): seq[SearchResult] =
       for h3 in link.querySelectorAll("h3"):
         sr.title = h3.innerText()
         break
+      sr.snippet = snip.innerText()
       result.add(sr)
-
-    var n = start
-    let snippets = xml.querySelectorAll("span.st")
-    for snip in snippets:
-      result[n].snippet = snip.innerText()
-      n += 1
 
     if len(result) > num_results:
       result = result[0..<num_results]
@@ -82,8 +79,7 @@ when isMainModule:
   else:
     total = 10
 
-  proc wrap(s: string, maxLineWidth: int = 78,
-      initialIndent: string = ""): string =
+  proc wrap(s: string, maxLineWidth = 78, initialIndent = ""): string =
     initialIndent & wrapWords(s, maxLineWidth, newline = "\L" & initialIndent)
 
   let results = search(query, total)
