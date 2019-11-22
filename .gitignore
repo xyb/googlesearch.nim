@@ -1,1 +1,5 @@
-nimcache/
+*.json
+*.ipynb
+__pycache__
+*.out
+.DS_Store
