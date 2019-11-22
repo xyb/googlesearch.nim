@@ -17,20 +17,20 @@ const
   USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/76.0.3809.100 Safari/537.36"
   SEARCH_URL = "https://google.com/search"
 
-proc `$`*(self: SearchResult): string =
-  self.url & "\n  TITLE: " & self.title & "\n  SNIPPET: " & self.snippet
-
-proc search*(query: string, num_results = 10): seq[SearchResult] =
+proc queryHtml(query: string, start = 0): string =
   var client = newHttpClient()
-  var start = 0
-  while true:
-    let q = encodeQuery({"q": query, "start": $start})
-    let url = SEARCH_URL & "?" & q
-    client.headers = newHttpHeaders({
-      "User-Agent": USER_AGENT,
-      "Accept-Language": "en-US,en;q=0.5",
-    })
-    let html = client.getContent(url)
+  let q = encodeQuery({"q": query, "start": $start})
+  let url = SEARCH_URL & "?" & q
+  client.headers = newHttpHeaders({
+    "User-Agent": USER_AGENT,
+    "Accept-Language": "en-US,en;q=0.5",
+  })
+  result = client.getContent(url)
+
+iterator search*(query: string, num_results = 10): SearchResult =
+  var total = 0
+  while total < num_results:
+    let html = queryHtml(query, total)
     let xml = parseHtml(newStringStream(html))
 
     let links = xml.querySelectorAll("div.r")
@@ -47,15 +47,12 @@ proc search*(query: string, num_results = 10): seq[SearchResult] =
         sr.title = h3.innerText()
         break
       sr.snippet = snip.innerText()
-      result.add(sr)
 
-    if len(result) > num_results:
-      result = result[0..<num_results]
+      yield sr
 
-    if len(result) == num_results:
-      break
-
-    start = len(result)
+      total += 1
+      if total >= num_results:
+        break
 
 when isMainModule:
   import os
@@ -82,10 +79,11 @@ when isMainModule:
   proc wrap(s: string, maxLineWidth = 78, initialIndent = ""): string =
     initialIndent & wrapWords(s, maxLineWidth, newline = "\L" & initialIndent)
 
-  let results = search(query, total)
-  for i, result in results:
-    var id = fmt"{i + 1}/{total}"
+  var i = 0
+  for result in search(query, total):
+    i += 1
+    var id = fmt"{i}/{total}"
     echo fmt"{id:<6}  {result.url}"
     echo fmt"        {result.title}"
     echo wrap(result.snippet, 70, "        ")
-  echo $len(results) & " results."
+  echo $i & " results."
