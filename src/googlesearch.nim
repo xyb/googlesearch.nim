@@ -25,6 +25,7 @@ proc search*(query: string, num_results: int = 10): seq[SearchResult] =
   while true:
     let q = encodeQuery({"q": query, "start": $start})
     let url = SEARCH_URL & "?" & q
+    echo url
     client.headers = newHttpHeaders({
       "User-Agent": USER_AGENT,
       "Accept-Language": "en-US,en;q=0.5",
@@ -58,6 +59,8 @@ proc search*(query: string, num_results: int = 10): seq[SearchResult] =
     if len(result) == num_results:
       break
 
+    start = len(result)
+
 when isMainModule:
   import os
   import strformat
@@ -82,8 +85,7 @@ when isMainModule:
 
   proc wrap(s: string, maxLineWidth: int = 78,
       initialIndent: string = ""): string =
-    var lines = split(wrapWords(s, maxLineWidth), "\L")
-    initialIndent & join(lines, "\L" & initialIndent)
+    initialIndent & wrapWords(s, maxLineWidth, newline = "\L" & initialIndent)
 
   let results = search(query, total)
   for i, result in results:
