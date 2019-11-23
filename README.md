@@ -56,3 +56,8 @@ $ googlesearch "nim packages" 2
         description - A description of this package.
 2 results.
 ```
+
+You may want to do complex serch like this:
+```
+$ googlesearch '"nim libray" wrapper -gpl site:github.com' 20
+```
