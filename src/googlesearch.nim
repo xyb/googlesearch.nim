@@ -1,6 +1,10 @@
 import httpclient
+import math
 import os
+import re
 import sequtils
+import strformat
+import strutils
 import uri
 import xmltree
 from htmlparser import parseHtml
@@ -34,14 +38,15 @@ proc newProxyHttpClient(): HttpClient =
   else:
     result = newHttpClient()
 
+  result.headers = newHttpHeaders({
+    "User-Agent": USER_AGENT,
+    "Accept-Language": "en-US,en;q=0.5",
+  })
+
 proc queryHtml(query: string, start = 0): string =
   var client = newProxyHttpClient()
   let q = encodeQuery({"q": query, "start": $start})
   let url = SEARCH_URL & "?" & q
-  client.headers = newHttpHeaders({
-    "User-Agent": USER_AGENT,
-    "Accept-Language": "en-US,en;q=0.5",
-  })
   result = client.getContent(url)
 
 iterator search*(query: string, maxResults = 10): SearchResult =
@@ -77,10 +82,36 @@ iterator search*(query: string, maxResults = 10): SearchResult =
       if total >= maxResults:
         break
 
+proc hits*(query: string): int =
+  ## Search the given query string using Google and return the number of hits.
+  let html = queryHtml(query)
+  let xml = parseHtml(newStringStream(html))
+  let results = xml.querySelectorAll("div#resultStats")
+  for stats in results:
+    for match in stats.innerText().findAll(re"[\d,.]+"):
+      return parseInt(match.replace(re","))
+
+proc distance*(term1, term2: string): float =
+  ## Return the Normalized Google Distance (NGD) between two search terms.
+  ## Result is roughly in between 0 and ∞. It can be slightly negative.
+  ##
+  ## Notice: The NGD is not a metric.
+  ##
+  ## More details:
+  ## https://en.wikipedia.org/wiki/Normalized_Google_distance
+
+  let
+    term1Hits = log10(float(hits(term1)))
+    term2Hits = log10(float(hits(term2)))
+    unionHits = log10(float(hits(&"\"{term1}\" \"{term2}\"")))
+    indexPages = hits("the")
+    termsPerPage = 1000
+    logN = log10(float(indexPages * termsPerPage))
+    numerator = max([term1Hits, term2Hits]) - unionHits
+    denominator = logN - min([term1Hits, term2Hits])
+  return numerator / denominator
+
 when isMainModule:
-  import os
-  import strformat
-  import strutils
   import std/wordwrap
 
   var args = commandLineParams()

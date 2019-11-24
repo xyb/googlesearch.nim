@@ -6,7 +6,7 @@ description   = "Nim library for scraping google search results"
 license       = "MIT"
 srcDir        = "src"
 installExt    = @["nim"]
-bin           = @["googlesearch"]
+bin           = @["googlesearch", "googledistance"]
 
 
 # Dependencies
