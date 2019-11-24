@@ -1,4 +1,5 @@
 import httpclient
+import os
 import sequtils
 import uri
 import xmltree
@@ -17,8 +18,24 @@ const
   USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/76.0.3809.100 Safari/537.36"
   SEARCH_URL = "https://google.com/search"
 
+proc newProxyHttpClient(): HttpClient =
+  var proxyUrl = ""
+  try:
+    if existsEnv("http_proxy"):
+      proxyUrl = getEnv("http_proxy")
+    elif existsEnv("https_proxy"):
+      proxyUrl = getEnv("https_proxy")
+  except ValueError:
+    discard
+
+  if proxyUrl != "":
+    let proxy = newProxy(url = proxyUrl)
+    result = newHttpClient(proxy = proxy)
+  else:
+    result = newHttpClient()
+
 proc queryHtml(query: string, start = 0): string =
-  var client = newHttpClient()
+  var client = newProxyHttpClient()
   let q = encodeQuery({"q": query, "start": $start})
   let url = SEARCH_URL & "?" & q
   client.headers = newHttpHeaders({
