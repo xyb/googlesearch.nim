@@ -3,7 +3,7 @@ import unittest
 import googlesearch
 
 test "search nim lang":
-  for result in search("nim lang", 1):
+  for result in search("Nim programming language", 1):
     check result.url == "https://nim-lang.org/"
 
 test "search more pages":
