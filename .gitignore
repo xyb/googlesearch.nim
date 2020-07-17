@@ -5,3 +5,7 @@ __pycache__
 .DS_Store
 googlesearch
 googledistance
+*.html
+*.css
+test_googlesearch
+test_googledistance

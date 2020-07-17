@@ -1,3 +1,5 @@
+## Nim library for scraping google search results.
+
 import httpclient
 import math
 import os
@@ -38,8 +40,12 @@ proc newProxyHttpClient(): HttpClient =
   else:
     result = newHttpClient()
 
+  var userAgent = getEnv("USER_AGENT", "")
+  if userAgent.len == 0:
+    userAgent = USER_AGENT
+
   result.headers = newHttpHeaders({
-    "User-Agent": USER_AGENT,
+    "User-Agent": userAgent,
     "Accept-Language": "en-US,en;q=0.5",
   })
 
@@ -84,9 +90,12 @@ iterator search*(query: string, maxResults = 10): SearchResult =
 
 proc hits*(query: string): int =
   ## Search the given query string using Google and return the number of hits.
+  runnableExamples:
+    doAssert hits("nim-lang") > 0
+
   let html = queryHtml(query)
   let xml = parseHtml(newStringStream(html))
-  let results = xml.querySelectorAll("div#resultStats")
+  let results = xml.querySelectorAll("div#result-stats")
   for stats in results:
     for match in stats.innerText().findAll(re"[\d,.]+"):
       return parseInt(match.replace(re","))
@@ -99,6 +108,8 @@ proc distance*(term1, term2: string): float =
   ##
   ## More details:
   ## https://en.wikipedia.org/wiki/Normalized_Google_distance
+  runnableExamples:
+    doAssert distance("nim-lang", "pascal") > 0.0
 
   let
     term1Hits = log10(float(hits(term1)))
