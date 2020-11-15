@@ -67,10 +67,10 @@ iterator search*(query: string, maxResults = 10): SearchResult =
     let html = queryHtml(query, total)
     let xml = parseHtml(newStringStream(html))
 
-    let links = xml.querySelectorAll("div.r")
+    let links = xml.querySelectorAll("div.g")
     if len(links) == 0:
       break
-    let snippets = xml.querySelectorAll("span.st")
+    let snippets = xml.querySelectorAll("div>div>span>span")
 
     for (link, snip) in zip(links, snippets):
       var sr: SearchResult
