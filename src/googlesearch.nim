@@ -22,7 +22,7 @@ type
 
 const
   USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/76.0.3809.100 Safari/537.36"
-  SEARCH_URL = "https://google.com/search"
+  SEARCH_URL = "https://google.com/search?hl=en"
 
 proc newProxyHttpClient(): HttpClient =
   var proxyUrl = ""
@@ -52,7 +52,7 @@ proc newProxyHttpClient(): HttpClient =
 proc queryHtml(query: string, start = 0): string =
   var client = newProxyHttpClient()
   let q = encodeQuery({"q": query, "start": $start})
-  let url = SEARCH_URL & "?" & q
+  let url = SEARCH_URL & "&" & q
   result = client.getContent(url)
 
 iterator search*(query: string, maxResults = 10): SearchResult =
