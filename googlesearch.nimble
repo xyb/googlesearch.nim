@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.4.1"
+version       = "0.4.2"
 author        = "Xie Yanbo"
 description   = "Nim library for scraping google search results"
 license       = "MIT"
